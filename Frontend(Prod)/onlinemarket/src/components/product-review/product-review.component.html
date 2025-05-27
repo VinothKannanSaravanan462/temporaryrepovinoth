@@ -1,0 +1,43 @@
+<div class="popup-overlay" *ngIf="showReviewPopup">
+    <div class="popup">
+        <h3>Product Reviews</h3>
+        <div *ngIf="reviews && reviews.length > 0; else noReviews">
+            <div class="review-item">
+                <div class="reviews-container">
+                    <div *ngFor="let review of reviews" class="single-review">
+                        <div class="product-overview">
+                            <a [routerLink]="['/product-details', review.productid]" style="display: block; cursor: pointer;">
+                                <img [src]="review.imageUrl" alt="{{ review.productName }}" class="product-image">
+                              </a>
+                            <div class="product-info-box">
+                              <p class="product-name">{{ review.productName }}</p>
+                              <p>{{ review.subscribersCount }} Subscribers</p>
+                              <p>{{ review.rating }} stars</p>
+                          </div>
+                        </div>
+                        <div class="review-details">
+                            <p class="product-description">{{ review.review }}</p>
+                            <div class="review-actions">
+                                <span class="bin-icon" (click)="deleteReview(review)" title="Remove Review">🗑️</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="button-group">
+                <button class="submit-button" (click)="submitReviews()">Submit</button>
+                <button type="button" (click)="closeReviewPopup()">Close</button>
+            </div>
+        </div>
+        <ng-template #noReviews>
+            <p>You have not reviewed any products yet.</p>
+            <button type="button" (click)="closeReviewPopup()">Close</button>
+        </ng-template>
+        <div *ngIf="updateSuccessMessage" class="success-message">
+            {{ updateSuccessMessage }}
+        </div>
+        <div *ngIf="errorMessage" class="error-message">
+            {{ errorMessage }}
+        </div>
+    </div>
+  </div>

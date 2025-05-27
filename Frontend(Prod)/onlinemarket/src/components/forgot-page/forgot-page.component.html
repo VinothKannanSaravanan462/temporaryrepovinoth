@@ -1,0 +1,37 @@
+<div class="container">
+  <div class="signin">
+    <form [formGroup]="forgotForm" (ngSubmit)="onSubmit()">
+      <h2>Forgot Password</h2>
+      <div class="row">
+        <div class="column">
+          <input type="email" formControlName="email" [(ngModel)]="email" placeholder="Enter email" required>
+          <div *ngIf="forgotForm.get('email')?.invalid && forgotForm.get('email')?.touched" class="error">
+            <div *ngIf="forgotForm.get('email')?.errors?.['required']">Email is required.</div>
+            <div *ngIf="forgotForm.get('email')?.errors?.['email']">Enter a valid email.</div>
+          </div>
+        </div>
+      </div>
+      <re-captcha (resolved)="onCaptchaResolved($event)"
+                  siteKey="6LdmHScrAAAAAAMItNO866dLsCXKqISmXB1fJbHs"></re-captcha>
+      <div class="column">
+        <button type="submit" class="submit">Submit</button>
+      </div>
+    </form>
+  </div>
+  <div class="divider"></div>
+  <div class="signin">
+    <button class="signin-btn" [routerLink]="'/signin'">Sign In</button>
+  </div>
+</div>
+
+<div *ngIf="showPopup" class="popup">
+  <div class="popup-content">
+        <div class="popup-header">
+        <h2>{{ popupTitle }}</h2>
+        <span class="close-button" (click)="closePopup()">&times;</span>
+        </div>
+        <div class="popup-body">
+        <p>{{ popupMessage }}</p>
+        </div>
+  </div>
+  </div>

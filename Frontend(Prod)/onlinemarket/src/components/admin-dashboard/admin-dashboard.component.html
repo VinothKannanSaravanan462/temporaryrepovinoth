@@ -1,0 +1,426 @@
+<main class="main-content">
+  <h2 class="section-title">Admin Functionalities</h2>
+ 
+ 
+  <div class="admin-buttons">
+    <div class="admincolumn">
+      <button (click)="openAddProductPopup()">Add Product</button>
+      <button (click)="openAddMultipleProductsPopup()">Add Multiple Products</button>
+      <button (click)="openUpdateProductPopup()">Update Product</button>
+    </div>
+    <div class="admindivider"></div>
+    <div class="admincolumn">
+      <button (click)="openAddUserPopup()">Add User</button>
+      <button (click)="openUpdateUserPopup()">Update User</button>
+      <button (click)="openGetUsersPopup()">Get Users</button>
+    </div>
+  </div>
+</main>
+<app-admin-update-user-popup
+  *ngIf="isUpdateUserPopupVisible"
+  (close)="closeUpdateUserPopup()"
+  (submit)="handleUserUpdated($event)"/>
+ 
+<app-admin-user-list-popup
+  *ngIf="showGetUsersPopup"
+  (close)="closeGetUsersPopup()"
+></app-admin-user-list-popup>
+ 
+<div class="popup-overlay" *ngIf="showAddProductPopup">
+  <div class="popup">
+    <h3>Add Product</h3>
+    <form (ngSubmit)="submitProduct()">
+      <input
+  type="text"
+  placeholder="Product Name"
+  [(ngModel)]="productName"
+  name="productName"
+  #name="ngModel"
+  required
+  [pattern]="namePattern"
+  (input)="onProductNameInput($event)" />
+<div *ngIf="name.invalid" class="text-danger">
+  <div *ngIf="name.errors?.['required']">Product name is required.</div>
+  <div *ngIf="name.errors?.['pattern']">
+    Product name must start with a letter, be up to 50 characters long, and can include numbers and spaces.
+  </div>
+</div>
+      <div *ngIf="duplicateProductNameError" class="text-danger">
+        Product name already exists. Please use a different name.
+      </div>
+      <input
+       type="text"
+       placeholder="Description"
+       [(ngModel)]="productDescription"
+       name="description"
+       required
+       minlength="100"
+        
+      />
+ 
+      <!-- <div *ngIf="desc.invalid && desc.touched" class="text-danger">
+      <div *ngIf="desc.errors?.['required']">Description is required.</div>-->
+        <!-- <div *ngIf="desc.errors?.['minlength']">  -->
+          <div *ngIf="descriptionError" class="text-danger">
+           Description must be at least 100 characters. ({{ productDescription.length || 0 }}/100)
+        </div>
+      <!-- </div> -->
+ 
+ 
+      <input type="file" id="fileInput" (change)="onFileSelected($event)" accept=".jpeg,.jpg,.png" />
+      <div *ngIf="invalidFileTypeError" class="text-danger">
+        Invalid file type. Only JPEG, JPG, and PNG files are allowed.
+      </div>      
+      <div *ngIf="selectedImageFile" class="file-info">
+        {{ selectedImageFile.name }}
+        <span class="remove-icon" (click)="removeImage()">❌</span>
+      </div>
+      <div *ngIf="imageRequiredError" class="text-danger">
+        Product image is required. Please upload an image.
+      </div>      
+      <div *ngIf="imagePreview">
+        <img [src]="imagePreview" alt="Preview" style="max-height: 150px;" />
+      </div>
+      <label>
+        Active Status:
+        <input type="checkbox" [(ngModel)]="isActive" name="activeStatus" />
+      </label>
+      <div class="button-group">
+        <button type="submit" >Submit</button>
+         <button type="button" (click)="closeAddProductPopup()">Cancel</button>
+
+        <!-- [disabled]="duplicateProductNameError || desc.invalid" -->
+      </div>
+    </form>
+  </div>
+</div>
+ 
+<div *ngIf="productAdded" class="popupSuccess">
+  <div class="popup-contents">
+        <div class="popup-header">
+        <h2>{{popupTitle}}</h2>
+        <span class="close-button" (click)="closeAddPopup()">&times;</span> </div>
+        <div class="popup-body">
+        <p>{{ popupMessage }}</p>
+        </div>
+  </div>
+  </div>
+ 
+<div class="popup-overlay" *ngIf="showAddMultipleProductsPopup">
+  <div class="popup">
+    <h3>Add Multiple Products</h3>
+    <form (ngSubmit)="submitBulkProducts()">
+      <div class="file-upload-container">
+        <input type="file" accept=".xlsx, .xls" (change)="onBulkFileChange($event)" required />
+        <span class="remove-file" *ngIf="bulkFile" (click)="removeBulkFile()">&#x2715;</span>
+      </div>
+      <div class="text-danger">* Please add excel of valid format(unique name, description, images)</div>
+      <div *ngIf="invalidBulkFileTypeError" class="text-danger">
+        * Invalid file type. Only XLSX files are allowed.
+      </div>
+      <div *ngIf="fileRequiredError" class="text-danger">
+        * File is required. Please upload a File.
+      </div>  
+      <label>
+        Active Status:
+        <input type="checkbox" [(ngModel)]="bulkProductisactive" name="bulkActiveStatus" />
+      </label>
+      <div class="button-group">
+        <button type="submit" [disabled]="invalidBulkFileTypeError || fileRequiredError">Submit</button>
+        <button type="button" (click)="closeAddMultipleProductsPopup()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="success-message" *ngIf="showSuccessPopup">
+  <span class="close-icon" (click)="closeSuccessPopup()">×</span>
+  <h3>Success</h3>
+  Multiple products added successfully!
+</div>
+<div class="error-message" *ngIf="showErrorPopup">
+  <span class="close-icon" (click)="closeErrorPopup()">×</span>
+  <h3>Error</h3>
+  Failed to add multiple products. Please check the file format and try again.
+</div>
+ 
+<div class="popup-overlay" *ngIf="showUpdatePopup">
+  <div class="popup">
+    <h3>Update Product</h3>
+    <input type="text" [(ngModel)]="product.name" placeholder="Search Product by Product Name" />
+    <div class="button-group1">
+      <button (click)="searchProduct()">Search</button> <button type="button" (click)="closeUpdateProductPopup()">Cancel</button>
+    </div>
+ 
+    <form *ngIf="productFound" (ngSubmit)="updateProduct()" #updateForm="ngForm">
+      <img *ngIf="previewImage" [src]="previewImage" alt="Product Image"
+        style="max-height: 150px; margin: 10px 0" />
+      <input type="text" name="upName" [(ngModel)]="product.upName" placeholder="Product Name" required />
+      <input type="text" name="upDescription" [(ngModel)]="product.upDescription" placeholder="Description"
+        required />
+      <input type="file" (change)="onUpdateFileSelected($event)" />
+      <div class="checkbox-container">
+        <label>
+          Active Status
+          <input type="checkbox" [(ngModel)]="product.isActive" name="activeStatus" />
+        </label>
+      </div>
+      <div class="button-group">
+        <button type="submit">Submit</button>
+        <button type="button" (click)="closeUpdateProductPopup()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+ 
+<div *ngIf="productUpdated" class="popupSuccess">
+  <div class="popup-contents">
+    <div class="popup-header">
+      <h2>{{popupTitle}}</h2>
+        <span class="close-button" (click)="closeUpdatePopup()">&times;</span> </div>
+        <div class="popup-body">
+        <p>{{ popupMessage }}</p>
+        </div>
+  </div>
+  </div>
+ 
+ 
+ 
+<div class="popup-over" *ngIf="showAddUserPopup">
+  <div class="popup-container">
+    <h3 class="popup-title">Add User</h3>
+    <br>
+    <form class="user-form" (ngSubmit)="submitUser()" #addUserForm="ngForm">
+      <div class="form-group">
+        <label for="firstName">First Name:</label>
+        <input
+          type="text"
+          id="firstName"
+          name="firstName"
+          placeholder="Enter first name"
+          [(ngModel)]="addUser.firstName"
+          #firstName="ngModel"
+          class="form-input"
+          pattern="^(?=.*[a-zA-Z])[a-zA-Z0-9._]{3,15}$"
+          required
+        />
+        <div *ngIf="firstName.invalid && (firstName.dirty || firstName.touched || addUserForm.submitted)" class="text-danger">
+          <div *ngIf="firstName.errors?.['required']">* First name is required.</div>
+          <div *ngIf="firstName.errors?.['pattern']">* Enter a valid first name (3-15 letters, dots, or underscores).</div>
+        </div>
+      </div>
+ 
+      <div class="form-group">
+        <label for="lastName">Last Name:</label>
+        <input
+          type="text"
+          id="lastName"
+          name="lastName"
+          placeholder="Enter last name"
+          [(ngModel)]="addUser.lastName"
+          #lastName="ngModel"
+          class="form-input"
+          pattern="^(?=.*[a-zA-Z])[a-zA-Z0-9._]{3,15}$"
+          required
+        />
+        <div *ngIf="lastName.invalid && (lastName.dirty || lastName.touched || addUserForm.submitted)" class="text-danger">
+          <div *ngIf="lastName.errors?.['required']">* Last name is required.</div>
+          <div *ngIf="lastName.errors?.['pattern']">* Enter a valid last name (3-15 letters, dots, or underscores).</div>
+        </div>
+      </div>
+ 
+      <div class="form-group">
+        <label for="nickName">Nickname:</label>
+        <input
+          type="text"
+          id="nickName"
+          name="nickName"
+          placeholder="Enter nick name"
+          [(ngModel)]="addUser.nickName"
+          #nickName="ngModel"
+          class="form-input"
+          pattern="^(?=.*[a-zA-Z])[a-zA-Z0-9._]{3,15}$"
+          required
+        />
+        <div *ngIf="nickName.invalid && (nickName.dirty || nickName.touched || addUserForm.submitted)" class="text-danger">
+          <div *ngIf="nickName.errors?.['required']">* Nickname is required.</div>
+          <div *ngIf="nickName.errors?.['pattern']">* Enter a valid nickname (3-15 letters, numbers, dots, or underscores).</div>
+        </div>
+      </div>
+ 
+      <div class="form-group">
+        <label for="dob">Date of Birth:</label>
+        <input
+          type="date"
+          id="dob"
+          name="dob"
+          placeholder="YYYY-MM-DD"
+          [(ngModel)]="addUser.dob"
+          #dob="ngModel"
+          class="form-input"
+          required
+        />
+        <div *ngIf="dob.invalid && (dob.dirty || dob.touched || addUserForm.submitted)" class="text-danger">
+          <div *ngIf="dob.errors?.['required']">* Date of Birth is required.</div>
+        </div>
+      </div>
+ 
+      <div class="form-group">
+        <label for="contactNo">Phone:</label>
+        <input
+          type="text"
+          id="contactNo"
+          name="contactNo"
+          placeholder="Enter contact number"
+          [(ngModel)]="addUser.contactNo"
+          #contactNo="ngModel"
+          class="form-input"
+          pattern="^[6-9]\d{9}$"
+          required
+        />
+        <div *ngIf="contactNo.invalid && (contactNo.dirty || contactNo.touched || addUserForm.submitted)" class="text-danger">
+          <div *ngIf="contactNo.errors?.['required']">* Phone number is required.</div>
+          <div *ngIf="contactNo.errors?.['pattern']">* Enter a valid 10-digit phone number.</div>
+        </div>
+      </div>
+ 
+      <div class="form-group">
+        <label for="addressLine1">Address Line 1:</label>
+        <input
+          type="text"
+          id="addressLine1"
+          name="addressLine1"
+          placeholder="Enter address line 1"
+          [(ngModel)]="addUser.addressL1"
+          #addressLine1="ngModel"
+          class="form-input"
+          minlength="10"
+          required
+        />
+        <div *ngIf="addressLine1.invalid && (addressLine1.dirty || addressLine1.touched || addUserForm.submitted)" class="text-danger">
+          <div *ngIf="addressLine1.errors?.['required']">* Address Line 1 is required.</div>
+          <div *ngIf="addressLine1.errors?.['minlength']">* Minimum length for Address Line 1 is 10 characters.</div>
+        </div>
+      </div>
+ 
+      <div class="form-group">
+        <label for="addressLine2">Address Line 2:</label>
+        <input
+          type="text"
+          id="addressLine2"
+          name="addressL2"
+          placeholder="Enter address line 2"
+          [(ngModel)]="addUser.addressL2"
+          #addressLine2="ngModel"
+          class="form-input"
+          minlength="10"
+          required
+        />
+        <div *ngIf="addressLine2.invalid && (addressLine2.dirty || addressLine2.touched || addUserForm.submitted)" class="text-danger">
+          <div *ngIf="addressLine2.errors?.['required']">* Address Line 2 is required.</div>
+          <div *ngIf="addressLine2.errors?.['minlength']">* Minimum length for Address Line 2 is 10 characters.</div>
+        </div>
+      </div>
+ 
+      <div class="form-group">
+        <label for="email">Email:</label>
+        <input
+          type="text"
+          id="email"
+          name="email"
+          placeholder="Enter email"
+          [(ngModel)]="addUser.email"
+          #email="ngModel"
+          class="form-input"
+          pattern="^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.(com|net|org)$"
+          required
+        />
+        <div *ngIf="email.invalid && (email.dirty || email.touched || addUserForm.submitted)" class="text-danger">
+          <div *ngIf="email.errors?.['required']">* Email is required.</div>
+          <div *ngIf="email.errors?.['pattern']">* Enter a valid email address.</div>
+        </div>
+      </div>
+ 
+      <div class="form-group">
+        <label for="postalCode">Postal Code:</label>
+        <input
+          type="text"
+          id="postalCode"
+          name="postalCode"
+          placeholder="Enter your postal code"
+          [(ngModel)]="addUser.postalCode"
+          #postalCode="ngModel"
+          class="form-input"
+          pattern="^[0-9]{6}$"
+          required
+        />
+        <div *ngIf="postalCode.invalid && (postalCode.dirty || postalCode.touched || addUserForm.submitted) && addUserForm.submitted" class="text-danger">
+          <div *ngIf="postalCode.errors?.['required']">* Postal code is required.</div>
+          <div *ngIf="postalCode.errors?.['pattern']">* Enter a valid 6-digit postal code.</div>
+        </div>
+      </div>
+ 
+      <div class="form-group ">
+        <label for="uploadPhoto" class="upload-photo-label">Upload Photo:</label>
+        <div>
+        <input
+          type="file"
+          id="imageFile"
+          name="imageFile"
+          (change)="onFileChange($event)"
+          accept="image/*"
+          required
+          class="upload-photo-input"
+          #uploadPhotoInput
+        />
+        <span class="remove-photo" (click)="removePhoto()">&#x2715;</span> </div>
+ 
+        <div *ngIf="!addUser?.imageFile && addUserForm.submitted" class="text-danger">
+          * Please upload a photo.
+        </div>
+      </div>
+ 
+      <div class="form-group admin-checkbox-group">
+        <label class="admin-checkbox-label">
+          isAdmin:
+          <input type="checkbox" [(ngModel)]="addUser.isAdmin" name="isAdmin" />
+        </label>
+      </div>
+ 
+      <div class="form-button-group">
+        <button type="submit" class="submit-button">Submit</button>
+        <button type="button" class="cancel-button" (click)="closeAddUserPopup()">
+          Cancel
+        </button>
+      </div>
+    </form>
+ 
+    <!-- <div *ngIf="addUserForm.invalid && addUserForm.submitted" class="text-danger mt-2" style="text-align: center;">
+      * Please fill all the required details in the form.
+    </div> -->
+ 
+    </div>
+</div>
+ 
+<div *ngIf="userAdded" class="popupSuccess">
+  <div class="popup-contents">
+    <div class="popup-header">
+      <h2>{{popupTitle}}</h2>
+        <span class="close-button" (click)="closeUserAddedPopup()">&times;</span> </div>
+        <div class="popup-body">
+        <p>{{ popupMessage }}</p>
+        </div>
+  </div>
+  </div>
+
+  <div *ngIf="showAlertPopup" class="alert-popup">
+    <div class="alert-popup-content">
+          <div class="alert-popup-header">
+          <h2>{{ AlertPopupTitle }}</h2>
+          <span class="alert-close-button" (click)="closeAlertPopup()">&times;</span>
+          </div>
+          <div class="alert-popup-body">
+          <p>{{ AlertPopupMessage }}</p>
+          </div>
+    </div>
+    </div>
+ 
